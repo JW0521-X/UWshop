@@ -1,0 +1,24 @@
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --text: #e6e6e6;
+  --muted: #9aa0a6;
+  --accent: #4da3ff;
+  --sold: #666;
+}
+
+body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif; line-height:1.6; }
+header { padding:2rem; border-bottom:1px solid #222; }
+header h1 { margin:0; font-size:1.8rem; letter-spacing:0.1em; }
+header p { margin-top:0.5rem; color:var(--muted); font-size:0.95rem; }
+main { padding:2rem; max-width:900px; margin:auto; }
+.item { background:var(--panel); padding:1.5rem; border-radius:10px; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; }
+.info h2 { margin:0 0 0.3rem; font-size:1.2rem; }
+.info p { margin:0; color:var(--muted); font-size:0.9rem; }
+.price { font-size:1.1rem; color:var(--accent); white-space:nowrap; }
+.status { font-size:0.85rem; margin-top:0.4rem; }
+.reserved { color:#f6c177; }
+.sold { color:var(--sold); text-decoration:line-through; }
+footer { padding:2rem; text-align:center; font-size:0.8rem; color:var(--muted); border-top:1px solid #222; }
+a { color:var(--accent); text-decoration:none; }
+

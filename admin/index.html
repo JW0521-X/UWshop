@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.W Admin</title>
+
+<style>
+body{
+  background:#0b1020;
+  color:#fff;
+  font-family:system-ui;
+  padding:1rem;
+}
+button{
+  margin:0.2rem;
+  padding:6px 10px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+}
+input{
+  padding:6px;
+  margin:0.2rem;
+}
+.card{
+  background:#1a1f3a;
+  padding:1rem;
+  border-radius:10px;
+  margin-bottom:1rem;
+}
+.danger{
+  background:#8b0000;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🛠 U.W Admin</h1>
+
+<form id="loginForm">
+  <input type="password" id="password" placeholder="管理員密碼">
+  <button>登入</button>
+</form>
+
+<div id="adminPanel" style="display:none">
+
+<!-- OG LOG -->
+<h2>🧾 Operation Log</h2>
+<pre id="og" style="background:#000;padding:10px;height:150px;overflow:auto"></pre>
+
+<!-- 維護模式 -->
+<div class="card">
+  <label>
+    <input type="checkbox" id="maintenanceToggle">
+    啟用維護模式（前台會被擋）
+  </label>
+</div>
+
+<!-- 新增商品 -->
+<div class="card">
+  <h3>➕ 新增商品</h3>
+  <input id="newName" placeholder="名稱">
+  <input id="newPrice" type="number" placeholder="價格">
+  <input id="newNote" placeholder="備註">
+  <input id="newContact" placeholder="聯絡方式" value="xxxx">
+  <br>
+  <button id="addBtn">新增</button>
+</div>
+
+<!-- 商品列表 -->
+<div id="adminProducts"></div>
+
+<!-- Factory Reset -->
+<div class="card">
+  <button id="factoryResetBtn" class="danger">
+    ⚠️ 恢復出廠（清空所有商品）
+  </button>
+</div>
+
+</div>
+
+<script>
+const PASSWORD = "1346";
+let products = [];
+
+const loginForm = document.getElementById("loginForm");
+const adminPanel = document.getElementById("adminPanel");
+
+loginForm.onsubmit = e => {
+  e.preventDefault();
+  if(password.value === PASSWORD){
+    loginForm.style.display="none";
+    adminPanel.style.display="block";
+    loadProducts();
+    loadMaintenance();
+    loadLogs();
+  } else alert("密碼錯誤");
+};
+
+// ===== 商品 =====
+async function loadProducts(){
+  const res = await fetch("/api/products");
+  products = await res.json();
+  renderProducts();
+}
+
+function renderProducts(){
+  const box = document.getElementById("adminProducts");
+  box.innerHTML = "<h2>📦 商品</h2>";
+  products.forEach((p,i)=>{
+    const div = document.createElement("div");
+    div.className="card";
+    div.innerHTML = `
+      <b>${p.name}</b>（${p.status}）<br>
+      <button onclick="setStatus(${i},'available')">可購買</button>
+      <button onclick="setStatus(${i},'reserved')">洽談中</button>
+      <button onclick="setStatus(${i},'sold')">已售</button>
+      <button onclick="setStatus(${i},'hidden')">下架</button>
+      <button class="danger" onclick="removeProduct(${i})">刪除</button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+function setStatus(i,status){
+  fetch(`/api/products/${products[i].id}/status`,{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status})
+  }).then(()=>{products[i].status=status;renderProducts();});
+}
+
+function removeProduct(i){
+  if(!confirm("確定刪除？"))return;
+  fetch(`/api/products/${products[i].id}`,{method:"DELETE"})
+    .then(()=>{products.splice(i,1);renderProducts();});
+}
+
+// 新增
+addBtn.onclick = async ()=>{
+  const p={
+    id:Date.now()+"",
+    name:newName.value,
+    price:+newPrice.value,
+    note:newNote.value,
+    contact:newContact.value,
+    status:"available"
+  };
+  await fetch("/api/products",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+  products.push(p);
+  renderProducts();
+};
+
+// ===== 維護 =====
+async function loadMaintenance(){
+  const r = await fetch("/api/maintenance");
+  const d = await r.json();
+  maintenanceToggle.checked = d.maintenance;
+}
+maintenanceToggle.onchange = ()=>{
+  fetch("/api/maintenance",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({maintenance:maintenanceToggle.checked})});
+};
+
+// ===== Factory Reset =====
+factoryResetBtn.onclick = async ()=>{
+  if(!confirm("⚠️ 會刪除全部商品"))return;
+  if(!confirm("❗ 最後確認"))return;
+  await fetch("/api/factory-reset",{method:"POST"});
+  products=[];
+  renderProducts();
+  maintenanceToggle.checked=false;
+};
+
+// ===== OG LOG =====
+async function loadLogs(){
+  const r = await fetch("/api/logs");
+  const logs = await r.json();
+  og.textContent = logs.join("\n");
+}
+setInterval(loadLogs,3000);
+</script>
+
+</body>
+</html>
+

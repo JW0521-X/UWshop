@@ -1,0 +1,53 @@
+/* Admin 整體背景 & 文字 */
+body {
+  background: #161a22; /* 深色背景 */
+  color: #e6e6e6;      /* 白文字 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+  margin: 0;
+  padding: 2rem;
+}
+
+/* 標題 */
+header {
+  border-bottom: 1px solid #222;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+/* 輸入框 */
+input {
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: none;
+  margin-right: 0.5rem;
+}
+
+/* 按鈕 */
+button {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  border-radius: 5px;
+  background: #4da3ff;
+  color: #fff;
+  cursor: pointer;
+  margin-right: 0.3rem;
+  margin-top: 0.3rem;
+}
+button:hover {
+  background: #3390ff;
+}
+
+/* 商品區塊 */
+#adminProducts div {
+  background: #222; /* 卡片深色 */
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+}
+
+/* 標題文字 */
+#adminProducts h3 {
+  margin: 0 0 0.5rem 0;
+}
+
