@@ -159,5 +159,30 @@ app.post("/api/factory-reset", (req, res) => {
   }
 });
 
+const ANNOUNCEMENT_FILE = path.join(__dirname, "announcement.json");
+
+// 取得公告
+app.get("/api/announcement", (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(ANNOUNCEMENT_FILE, "utf8"));
+    res.json({ text: data.text || "" });
+  } catch (err) {
+    res.json({ text: "" });
+  }
+});
+
+// 更新公告（admin用）
+app.post("/api/announcement", (req, res) => {
+  const { text } = req.body;
+  try {
+    fs.writeFileSync(ANNOUNCEMENT_FILE, JSON.stringify({ text }, null, 2));
+    ogLog(`公告更新：${text}`);
+    res.json({ message: "公告已更新" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "無法更新公告" });
+  }
+});
+
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Server running at http://0.0.0.0:${PORT}`));

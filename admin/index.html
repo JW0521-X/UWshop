@@ -82,6 +82,32 @@ input{
 
 </div>
 
+<div id="announcementControl" style="margin-bottom:1rem;">
+  <h3>公告板控制</h3>
+  <input type="text" id="announcementInput" placeholder="輸入公告文字" style="width:300px;">
+  <button id="announcementBtn">更新公告</button>
+</div>
+
+<script>
+document.getElementById("announcementBtn").addEventListener("click", async ()=>{
+  const text = document.getElementById("announcementInput").value.trim();
+  if(!text) return alert("請輸入公告文字");
+  try {
+    const res = await fetch("/api/announcement",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
+    alert(data.message);
+    document.getElementById("announcementInput").value="";
+  } catch(err){
+    alert("公告更新失敗："+err);
+  }
+});
+</script>
+
+
 <script>
 const PASSWORD = "1346";
 let products = [];

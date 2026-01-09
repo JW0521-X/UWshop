@@ -11,6 +11,48 @@
     <h1 style="text-align:center;color:#fff;margin:2rem 0;">U.W 二手商店</h1>
   </header>
 
+<!-- 跑馬燈公告 -->
+<div id="marquee" style="
+  position: fixed;
+  top: 120px; /* 調整到標題下方 */
+  left: 100%;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 250, 229, 0.15);
+  color: #f5f5f5;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 5px;
+  z-index: 9999;
+  animation: marqueeAnim 15s linear infinite;
+">
+  無標題--會自動更新
+</div>
+
+<style>
+@keyframes marqueeAnim {
+  0% { left: 100%; }
+  100% { left: -100%; }
+}
+</style>
+
+<script>
+async function loadMarquee() {
+  try {
+    const res = await fetch("/api/announcement");
+    const data = await res.json();
+    const marquee = document.getElementById("marquee");
+    marquee.textContent = data.text;
+  } catch(err) {
+    console.error("無法讀取公告", err);
+  }
+}
+
+// 每 5 秒自動更新
+loadMarquee();
+setInterval(loadMarquee, 5000);
+</script>
+
   <main></main>
   <script src="js/main.js"></script>
 </body>
