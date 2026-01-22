@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 
 const PRODUCTS_FILE = path.join(__dirname, "products.json");
 const MAINTENANCE_FILE = path.join(__dirname, "maintenance.json");
-
+let adminToken = null;
 // ===== Operation Log (OG) =====
 const logs = [];
 const MAX_LOGS = 100;
@@ -49,6 +49,17 @@ app.use((req, res, next) => {
 app.use(express.static(__dirname)); // 靜態檔案
 
 // ===== API =====
+
+app.post("/api/admin/login", (req, res) => {
+  const { password } = req.body;
+
+  if (password !== "1346") {
+    return res.sendStatus(401);
+  }
+
+  adminToken = Math.random().toString(36).slice(2);
+  res.json({ token: adminToken });
+});
 
 // 取得商品列表
 app.get("/api/products", (req, res) => {
