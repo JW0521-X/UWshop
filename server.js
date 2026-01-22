@@ -48,6 +48,14 @@ app.use((req, res, next) => {
 
 app.use(express.static(__dirname)); // 靜態檔案
 
+function requireAdmin(req, res, next) {
+  const token = req.headers["x-admin-token"];
+  if (!token || token !== adminToken) {
+    return res.sendStatus(403);
+  }
+  next();
+}
+
 // ===== API =====
 
 app.post("/api/admin/login", (req, res) => {
