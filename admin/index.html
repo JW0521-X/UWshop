@@ -109,21 +109,33 @@ document.getElementById("announcementBtn").addEventListener("click", async ()=>{
 
 
 <script>
-const PASSWORD = "1346";
-let products = [];
+let ADMIN_TOKEN = null;
 
-const loginForm = document.getElementById("loginForm");
-const adminPanel = document.getElementById("adminPanel");
-
-loginForm.onsubmit = e => {
+loginForm.onsubmit = async e => {
   e.preventDefault();
-  if(password.value === PASSWORD){
-    loginForm.style.display="none";
-    adminPanel.style.display="block";
-    loadProducts();
-    loadMaintenance();
-    loadLogs();
-  } else alert("密碼錯誤");
+
+  const res = await fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      password: password.value
+    })
+  });
+
+  if (!res.ok) {
+    alert("密碼錯誤");
+    return;
+  }
+
+  const data = await res.json();
+  ADMIN_TOKEN = data.token;
+
+  loginForm.style.display = "none";
+  adminPanel.style.display = "block";
+
+  loadProducts();
+  loadMaintenance();
+  loadLogs();
 };
 
 // ===== 商品 =====
