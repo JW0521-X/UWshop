@@ -7,17 +7,28 @@
 
 <style>
 body{
-  background:#0b1020;
-  color:#fff;
+  margin:0;
   font-family:system-ui;
-  padding:1rem;
+  background:#0b1020;
+  color:white;
+}
+header{
+  background:#1a1f3a;
+  padding:1rem 2rem;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 button{
-  margin:0.2rem;
   padding:6px 10px;
-  border-radius:6px;
   border:none;
+  border-radius:6px;
   cursor:pointer;
+  font-weight:bold;
+}
+button.danger{
+  background:#ef4444;
+  color:white;
 }
 input{
   padding:6px;
@@ -29,130 +40,137 @@ input{
   border-radius:10px;
   margin-bottom:1rem;
 }
-.danger{
-  background:#8b0000;
-  color:#fff;
+.container{
+  padding:1rem 2rem;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🛠 U.W Admin</h1>
+<header>
+  <h2>🛠 U.W Admin</h2>
+  <div>
+    <span id="adminName"></span>
+    <button onclick="logout()" class="danger">登出</button>
+  </div>
+</header>
 
-<form id="loginForm">
-  <input type="password" id="password" placeholder="管理員密碼">
-  <button>登入</button>
-</form>
+<div class="container">
 
-<div id="adminPanel" style="display:none">
+  <!-- 管理員資訊 -->
+  <div class="card">
+    <h3>👤 管理員資訊</h3>
+    <p>帳號：<span id="adminAccount"></span></p>
+    <p>角色：<span id="adminRole"></span></p>
+  </div>
 
-<!-- OG LOG -->
-<h2>🧾 Operation Log</h2>
-<pre id="og" style="background:#000;padding:10px;height:150px;overflow:auto"></pre>
+  <!-- 維護模式 -->
+  <div class="card">
+    <h3>🔧 維護模式</h3>
+    <label><input type="checkbox" id="maintenanceToggle"> 啟用維護模式</label>
+  </div>
 
-<!-- 維護模式 -->
-<div class="card">
-  <label>
-    <input type="checkbox" id="maintenanceToggle">
-    啟用維護模式（前台會被擋）
-  </label>
-</div>
+  <!-- 新增商品 -->
+  <div class="card">
+    <h3>➕ 新增商品</h3>
+    <input id="newName" placeholder="名稱">
+    <input id="newPrice" type="number" placeholder="價格">
+    <input id="newNote" placeholder="備註">
+    <input id="newContact" placeholder="聯絡方式">
+    <br>
+    <button id="addBtn">新增商品</button>
+  </div>
 
-<!-- 新增商品 -->
-<div class="card">
-  <h3>➕ 新增商品</h3>
-  <input id="newName" placeholder="名稱">
-  <input id="newPrice" type="number" placeholder="價格">
-  <input id="newNote" placeholder="備註">
-  <input id="newContact" placeholder="聯絡方式" value="xxxx">
-  <br>
-  <button id="addBtn">新增</button>
-</div>
+  <!-- 商品列表 -->
+  <div class="card">
+    <h3>📦 商品列表</h3>
+    <div id="adminProducts"></div>
+  </div>
 
-<!-- 商品列表 -->
-<div id="adminProducts"></div>
+  <!-- Factory Reset -->
+  <div class="card">
+    <button id="factoryResetBtn" class="danger">⚠️ 清空所有商品</button>
+  </div>
 
-<!-- Factory Reset -->
-<div class="card">
-  <button id="factoryResetBtn" class="danger">
-    ⚠️ 恢復出廠（清空所有商品）
-  </button>
-</div>
+  <!-- 公告 -->
+  <div class="card">
+    <h3>📢 公告板控制</h3>
+    <input type="text" id="announcementInput" placeholder="公告文字" style="width:300px;">
+    <button id="announcementBtn">更新公告</button>
+  </div>
 
-<div id="announcementControl" style="margin-bottom:1rem;">
-  <h3>公告板控制</h3>
-  <input type="text" id="announcementInput" placeholder="輸入公告文字" style="width:300px;">
-  <button id="announcementBtn">更新公告</button>
-</div>
+  <!-- Logs -->
+  <div class="card">
+    <h3>🧾 Operation Log</h3>
+    <pre id="og" style="background:#000;padding:10px;height:150px;overflow:auto"></pre>
+  </div>
 
 </div>
 
 <script>
-document.getElementById("announcementBtn").addEventListener("click", async ()=>{
-  const text = document.getElementById("announcementInput").value.trim();
-  if(!text) return alert("請輸入公告文字");
-  try {
-    const res = await fetch("/api/announcement",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ text })
-    });
-    const data = await res.json();
-    alert(data.message);
-    document.getElementById("announcementInput").value="";
-  } catch(err){
-    alert("公告更新失敗："+err);
-  }
-});
-</script>
-
-
-<script>
-let ADMIN_TOKEN = null;
-
-loginForm.onsubmit = async e => {
-  e.preventDefault();
-
-  const res = await fetch("/api/admin/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      password: password.value
-    })
-  });
-
-  if (!res.ok) {
-    alert("密碼錯誤");
-    return;
-  }
-
-  const data = await res.json();
-  ADMIN_TOKEN = data.token;
-
-  loginForm.style.display = "none";
-  adminPanel.style.display = "block";
-
-  loadProducts();
-  loadMaintenance();
-  loadLogs();
-};
-
-// ===== 商品 =====
-async function loadProducts(){
-  const res = await fetch("/api/products");
-  products = await res.json();
-  renderProducts();
+const token = localStorage.getItem("token");
+if(!token){
+  window.location.href="/login.html";
 }
 
+/* ===== 驗證 admin ===== */
+fetch("/api/users/me", {
+  headers: { "Authorization":"Bearer " + token }
+})
+.then(res=>res.json())
+.then(user=>{
+  if(user.role!=="admin"){
+    alert("你不是管理員");
+    window.location.href="/index.html";
+    return;
+  }
+  document.getElementById("adminName").textContent = "👤 " + user.username;
+  document.getElementById("adminAccount").textContent = user.username;
+  document.getElementById("adminRole").textContent = user.role;
+})
+.catch(()=>{
+  localStorage.removeItem("token");
+  window.location.href="/login.html";
+});
+
+/* ===== 登出 ===== */
+function logout(){
+  localStorage.removeItem("token");
+  window.location.href="/login.html";
+}
+
+/* ===== 維護模式 ===== */
+const maintenanceToggle = document.getElementById("maintenanceToggle");
+function loadMaintenance(){
+  fetch("/api/maintenance", { headers:{ "Authorization":"Bearer "+token }})
+    .then(r=>r.json())
+    .then(d=>{maintenanceToggle.checked=d.maintenance;});
+}
+maintenanceToggle.onchange = ()=>{
+  fetch("/api/maintenance",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
+    body: JSON.stringify({ maintenance: maintenanceToggle.checked })
+  });
+}
+loadMaintenance();
+
+/* ===== 商品管理 ===== */
+let products = [];
+function loadProducts(){
+  fetch("/api/products", { headers:{ "Authorization":"Bearer "+token }})
+    .then(r=>r.json())
+    .then(d=>{products=d; renderProducts();});
+}
 function renderProducts(){
   const box = document.getElementById("adminProducts");
-  box.innerHTML = "<h2>📦 商品</h2>";
+  box.innerHTML="";
   products.forEach((p,i)=>{
     const div = document.createElement("div");
     div.className="card";
     div.innerHTML = `
-      <b>${p.name}</b>（${p.status}）<br>
+      <b>${p.name}</b>（${p.status || "available"}）<br>
       <button onclick="setStatus(${i},'available')">可購買</button>
       <button onclick="setStatus(${i},'reserved')">洽談中</button>
       <button onclick="setStatus(${i},'sold')">已售</button>
@@ -162,65 +180,69 @@ function renderProducts(){
     box.appendChild(div);
   });
 }
-
 function setStatus(i,status){
   fetch(`/api/products/${products[i].id}/status`,{
     method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({status})
-  }).then(()=>{products[i].status=status;renderProducts();});
+    headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
+    body: JSON.stringify({ status })
+  }).then(()=>{products[i].status=status; renderProducts();});
 }
-
 function removeProduct(i){
   if(!confirm("確定刪除？"))return;
-  fetch(`/api/products/${products[i].id}`,{method:"DELETE"})
-    .then(()=>{products.splice(i,1);renderProducts();});
+  fetch(`/api/products/${products[i].id}`,{
+    method:"DELETE",
+    headers:{ "Authorization":"Bearer "+token }
+  }).then(()=>{
+    products.splice(i,1);
+    renderProducts();
+  });
 }
-
-// 新增
-addBtn.onclick = async ()=>{
+document.getElementById("addBtn").onclick = ()=>{
   const p={
     id:Date.now()+"",
-    name:newName.value,
-    price:+newPrice.value,
-    note:newNote.value,
-    contact:newContact.value,
+    name:document.getElementById("newName").value,
+    price:+document.getElementById("newPrice").value,
+    note:document.getElementById("newNote").value,
+    contact:document.getElementById("newContact").value,
     status:"available"
   };
-  await fetch("/api/products",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
-  products.push(p);
-  renderProducts();
-};
-
-// ===== 維護 =====
-async function loadMaintenance(){
-  const r = await fetch("/api/maintenance");
-  const d = await r.json();
-  maintenanceToggle.checked = d.maintenance;
+  fetch("/api/products",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+token },
+    body: JSON.stringify(p)
+  }).then(()=>{products.push(p); renderProducts();});
 }
-maintenanceToggle.onchange = ()=>{
-  fetch("/api/maintenance",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({maintenance:maintenanceToggle.checked})});
-};
+document.getElementById("factoryResetBtn").onclick = ()=>{
+  if(!confirm("⚠️ 會刪除全部商品")) return;
+  fetch("/api/factory-reset",{
+    method:"POST",
+    headers:{ "Authorization":"Bearer "+token }
+  }).then(()=>{products=[]; renderProducts(); maintenanceToggle.checked=false;});
+}
 
-// ===== Factory Reset =====
-factoryResetBtn.onclick = async ()=>{
-  if(!confirm("⚠️ 會刪除全部商品"))return;
-  if(!confirm("❗ 最後確認"))return;
-  await fetch("/api/factory-reset",{method:"POST"});
-  products=[];
-  renderProducts();
-  maintenanceToggle.checked=false;
-};
+/* ===== 公告 ===== */
+document.getElementById("announcementBtn").onclick = ()=>{
+  const text = document.getElementById("announcementInput").value.trim();
+  if(!text) return alert("請輸入公告");
+  fetch("/api/announcement",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json","Authorization":"Bearer "+token },
+    body: JSON.stringify({ text })
+  }).then(()=>{ alert("公告已更新"); document.getElementById("announcementInput").value=""; });
+}
 
-// ===== OG LOG =====
-async function loadLogs(){
-  const r = await fetch("/api/logs");
-  const logs = await r.json();
-  og.textContent = logs.join("\n");
+/* ===== Logs ===== */
+function loadLogs(){
+  fetch("/api/logs",{ headers:{ "Authorization":"Bearer "+token }})
+    .then(r=>r.json())
+    .then(d=>{ document.getElementById("og").textContent=d.join("\n"); });
 }
 setInterval(loadLogs,3000);
+
+/* ===== 初始化 ===== */
+loadProducts();
+
 </script>
 
 </body>
 </html>
-
