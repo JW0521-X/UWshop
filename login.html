@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.W 登入</title>
+
+<style>
+body{
+  font-family: system-ui;
+  background:#0b1020;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+  color:white;
+}
+
+.card{
+  background:#1a1f3a;
+  padding:2rem;
+  border-radius:12px;
+  width:320px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.3);
+}
+
+h2{
+  text-align:center;
+  margin-bottom:1.5rem;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin-bottom:1rem;
+  border-radius:8px;
+  border:none;
+  outline:none;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#4CAF50;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
+}
+
+.secondary{
+  background:#2196F3;
+  margin-top:0.5rem;
+}
+
+#message{
+  min-height:20px;
+  text-align:center;
+  margin-bottom:1rem;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>會員 / 管理員登入</h2>
+
+  <div id="message"></div>
+
+  <form id="loginForm">
+    <input type="text" name="username" placeholder="帳號" required>
+    <input type="password" name="password" placeholder="密碼" required>
+    <button type="submit">登入</button>
+  </form>
+
+  <button class="secondary" onclick="goRegister()">前往註冊</button>
+</div>
+
+<script>
+const form = document.getElementById("loginForm");
+const message = document.getElementById("message");
+
+/* 如果已經登入，自動跳轉 */
+(async function(){
+  const token = localStorage.getItem("token");
+  if(!token) return;
+
+  try{
+    const res = await fetch("/api/users/me",{
+      headers:{ "Authorization":"Bearer "+token }
+    });
+
+    if(!res.ok) return;
+
+    const user = await res.json();
+
+    if(user.role === "admin"){
+      window.location.href = "/admin/index.html";
+    }else{
+      window.location.href = "/index.html";
+    }
+
+  }catch(err){}
+})();
+
+/* 登入處理 */
+form.addEventListener("submit", async (e)=>{
+  e.preventDefault();
+
+  const data = {
+    username: form.username.value.trim(),
+    password: form.password.value
+  };
+
+  message.style.color="#ccc";
+  message.textContent="登入中...";
+
+  try{
+
+    /* ① 先嘗試 admin 登入 */
+    let res = await fetch("/api/admin/login",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(data)
+    });
+
+    if(res.ok){
+      const result = await res.json();
+      localStorage.setItem("token", result.token);
+      window.location.href = "/admin/index.html";
+      return;
+    }
+
+    /* ② admin 失敗 → 嘗試一般會員 */
+    res = await fetch("/api/login",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if(!res.ok){
+      message.style.color="red";
+      message.textContent=result.message || "登入失敗";
+      return;
+    }
+
+    localStorage.setItem("token", result.token);
+    window.location.href = "/index.html";
+
+  }catch(err){
+    console.error(err);
+    message.style.color="red";
+    message.textContent="伺服器錯誤";
+  }
+});
+
+/* 前往註冊 */
+function goRegister(){
+  window.location.href="/register.html";
+}
+</script>
+
+</body>
+</html>
